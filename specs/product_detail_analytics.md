@@ -16,4 +16,3 @@
 | `unit_price` | `$.price` | Double | Yes | Ürün birim fiyatı |
 | `category` | `$.category` | String | No | Ürün kategorisi |
 
-

@@ -38,47 +38,53 @@ for spec_path in spec_files:
     --- MOCK JSON VERİSİ ---
     {mock_content}
     
-    Senden 2 adet JSON nesnesi üretmeni istiyorum:
-    1. "schema": Standard Draft-07 JSON Schema.
+    Senden kök dizinde 2 adet JSON objesi içeren TAM BİR ÇIKTI üretmeni istiyorum:
+    1. "schema": Standard Draft-07 JSON Schema. Spesifikasyondaki tüm parametreleri, veri tiplerini ve zorunluluk (required) durumlarını eksiksiz içermelidir.
     2. "mapping": Target/Destination odaklı parametre eşleme JSON'ı. 
-       - "destinations" dizisinde hedef provider'lar BÜYÜK HARFLERLE yer almalıdır (Örn: ["FIREBASE", "ADJUST", "SGTM"]).
-       - "destination_payloads" nesnesi altında HER BİR destination için nesne açılmalı ve parametrelerin hedef key karşılıkları yazılmalıdır.
+       - "destinations": BÜYÜK HARFLERLE hedef provider isimleri (Örn: ["FIREBASE", "ADJUST", "SGTM"]).
+       - "destination_payloads": HER BİR destination için ayrı bir obje açılmalı ve parametrelerin hedef key karşılıkları yazılmalıdır.
        - İlgili provider'a gönderilmeyen parametreler o provider'ın payload nesnesine EKLENMEMELİDİR.
-    """
 
-    # Kesin format zorlaması için Structured Output Schema
-    json_response_schema = {
-        "type": "OBJECT",
-        "properties": {
-            "schema": {
-                "type": "OBJECT",
-                "description": "Draft-07 JSON Schema definition"
-            },
-            "mapping": {
-                "type": "OBJECT",
-                "properties": {
-                    "event_name": {"type": "STRING"},
-                    "destinations": {
-                        "type": "ARRAY",
-                        "items": {"type": "STRING"}
-                    },
-                    "destination_payloads": {
-                        "type": "OBJECT",
-                        "description": "Target bazlı key-value mapping. Örn: {'FIREBASE': {'item_id': 'productId'}, 'ADJUST': {'revenue': 'price'}}"
-                    }
-                },
-                "required": ["event_name", "destinations", "destination_payloads"]
-            }
-        },
-        "required": ["schema", "mapping"]
-    }
+    BEKLENEN TAM ÇIKTI FORMATI ÖRNEĞİ:
+    {{
+      "schema": {{
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "AddToCartClicked",
+        "type": "object",
+        "properties": {{
+          "productId": {{ "type": "string" }},
+          "price": {{ "type": "number" }},
+          "quantity": {{ "type": "integer" }}
+        }},
+        "required": ["productId", "price", "quantity"]
+      }},
+      "mapping": {{
+        "event_name": "add_to_cart_clicked",
+        "destinations": ["FIREBASE", "ADJUST", "SGTM"],
+        "destination_payloads": {{
+          "FIREBASE": {{
+            "item_id": "productId",
+            "value": "price",
+            "quantity": "quantity"
+          }},
+          "ADJUST": {{
+            "revenue": "price"
+          }},
+          "SGTM": {{
+            "product_id": "productId",
+            "price": "price",
+            "quantity": "quantity"
+          }}
+        }}
+      }}
+    }}
+    """
 
     response = client.models.generate_content(
         model='gemini-3.6-flash',
         contents=prompt,
         config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=json_response_schema
+            response_mime_type="application/json"
         )
     )
 
