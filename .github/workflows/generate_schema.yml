@@ -37,6 +37,8 @@ jobs:
           git clone https://x-access-token:${TOKEN}@github.com/ozantakir/analytics-schema-repo.git schema_repo
           
           mkdir -p schema_repo/schemas schema_repo/mappings
+          rm -rf schema_repo/schemas/*
+          rm -rf schema_repo/mappings/*
           cp -r output/schemas/* schema_repo/schemas/ || true
           cp -r output/mappings/* schema_repo/mappings/ || true
           

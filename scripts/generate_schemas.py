@@ -4,10 +4,8 @@ import glob
 from google import genai
 from google.genai import types
 
-# 1. Gemini Client Kurulumu
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# Klasör Yolları
 SPEC_DIR = "specs"
 MOCK_DIR = "mock_data"
 OUTPUT_SCHEMA_DIR = "output/schemas"
@@ -16,7 +14,6 @@ OUTPUT_MAPPING_DIR = "output/mappings"
 os.makedirs(OUTPUT_SCHEMA_DIR, exist_ok=True)
 os.makedirs(OUTPUT_MAPPING_DIR, exist_ok=True)
 
-# 2. Spec ve Mock Dosyalarını Okuma
 spec_files = glob.glob(f"{SPEC_DIR}/*.md")
 
 for spec_path in spec_files:
@@ -31,10 +28,9 @@ for spec_path in spec_files:
         with open(mock_path, "r", encoding="utf-8") as f:
             mock_content = f.read()
 
-    # 3. Yöntem 2 Destinasyon Kırılımlı Gemini Prompt'u
     prompt = f"""
     Sen kıdemli bir Analytics ve Schema mimarısın. 
-    Aşağıda verilen Markdown spesifikasyonunu ve Örnek Mock JSON verisini analiz et.
+    Aşağıdaki Markdown spesifikasyonunu ve Örnek Mock JSON verisini analiz et.
     
     --- SPEC DOKÜMANI ---
     {spec_content}
@@ -43,59 +39,49 @@ for spec_path in spec_files:
     {mock_content}
     
     Senden 2 adet JSON nesnesi üretmeni istiyorum:
-    1. "schema": Standard Draft-07 JSON Schema (Tüm event parametrelerini, tiplerini ve zorunluluk durumlarını içerir).
+    1. "schema": Standard Draft-07 JSON Schema.
     2. "mapping": Target/Destination odaklı parametre eşleme JSON'ı. 
-       - "destinations" dizisinde hedef provider'lar yer almalıdır (Örn: "FIREBASE", "ADJUST", "SGTM").
-       - "destination_payloads" nesnesi altında HER BİR destination için hangi parametrenin hangi hedef key'e eşleneceğini yaz. 
-       - İlgili provider'a gönderilmeyen parametreleri o provider'ın payload'ına ekleme.
-    
-    YAZILACAK ÇIKTI FORMATI:
-    Yalnızca geçerli bir JSON objesi döndür. Açıklama metni veya markdown kod blokları (```json) EKLEME. Format tam olarak şu şekilde olmalıdır:
-    
-    {{
-      "schema": {{
-        "$schema": "[http://json-schema.org/draft-07/schema#](http://json-schema.org/draft-07/schema#)",
-        "title": "AddToCartClicked",
-        "type": "object",
-        "properties": {{
-          "productId": {{ "type": "string" }},
-          "price": {{ "type": "number" }},
-          "quantity": {{ "type": "integer" }}
-        }},
-        "required": ["productId", "price", "quantity"]
-      }},
-      "mapping": {{
-        "event_name": "add_to_cart_clicked",
-        "destinations": ["FIREBASE", "ADJUST", "SGTM"],
-        "destination_payloads": {{
-          "FIREBASE": {{
-            "item_id": "productId",
-            "value": "price",
-            "quantity": "quantity"
-          }},
-          "ADJUST": {{
-            "revenue": "price"
-          }},
-          "SGTM": {{
-            "product_id": "productId",
-            "price": "price",
-            "quantity": "quantity"
-          }}
-        }}
-      }}
-    }}
+       - "destinations" dizisinde hedef provider'lar BÜYÜK HARFLERLE yer almalıdır (Örn: ["FIREBASE", "ADJUST", "SGTM"]).
+       - "destination_payloads" nesnesi altında HER BİR destination için nesne açılmalı ve parametrelerin hedef key karşılıkları yazılmalıdır.
+       - İlgili provider'a gönderilmeyen parametreler o provider'ın payload nesnesine EKLENMEMELİDİR.
     """
 
-    # 4. Gemini API Çağrısı
+    # Kesin format zorlaması için Structured Output Schema
+    json_response_schema = {
+        "type": "OBJECT",
+        "properties": {
+            "schema": {
+                "type": "OBJECT",
+                "description": "Draft-07 JSON Schema definition"
+            },
+            "mapping": {
+                "type": "OBJECT",
+                "properties": {
+                    "event_name": {"type": "STRING"},
+                    "destinations": {
+                        "type": "ARRAY",
+                        "items": {"type": "STRING"}
+                    },
+                    "destination_payloads": {
+                        "type": "OBJECT",
+                        "description": "Target bazlı key-value mapping. Örn: {'FIREBASE': {'item_id': 'productId'}, 'ADJUST': {'revenue': 'price'}}"
+                    }
+                },
+                "required": ["event_name", "destinations", "destination_payloads"]
+            }
+        },
+        "required": ["schema", "mapping"]
+    }
+
     response = client.models.generate_content(
         model='gemini-3.6-flash',
         contents=prompt,
         config=types.GenerateContentConfig(
-            response_mime_type="application/json"
+            response_mime_type="application/json",
+            response_schema=json_response_schema
         )
     )
 
-    # 5. Sonuçları Kaydetme
     result = json.loads(response.text)
     
     with open(os.path.join(OUTPUT_SCHEMA_DIR, f"{filename}.schema.json"), "w", encoding="utf-8") as f:
