@@ -1,18 +1,15 @@
-# Screen: Product Detail Screen
-# Figma Screenshot: ../screenshots/product_detail_screen.png
+# Product Detail Analytics Spec
 
----
+## Event: Add To Cart Clicked
+- **Event Name:** `add_to_cart_clicked`
+- **Description:** Kullanıcı ürün detay ekranında sepeti ekle butonuna bastığında tetiklenir.
+- **Destinations:** `FIREBASE`, `ADJUST`, `SGTM`
 
-## Event: `add_to_cart_clicked`
-- **Trigger:** Kullanıcı "Add to Cart" butonuna tıkladığında tetiklenir.
-- **Source Data Sample:** `../mock_data/product_detail_response.json`
-- **Destinations:** `firebase`, `adjust`, `sgtm`
+### Parametreler & Mapping Tablosu
 
-### Parameter Mapping Rules
-| Target Event Param (SDK) | Source Path (JSON Response) | Data Type | Required | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `product_id` | `$.productId` | String | Yes | Eklenen ürünün ID'si |
-| `product_name` | `$.title` | String | Yes | Ürünün adı |
-| `unit_price` | `$.price` | Double | Yes | Ürün birim fiyatı |
-| `category` | `$.category` | String | No | Ürün kategorisi |
-
+| Parametre İsmi | Tipi | Zorunlu | Açıklama | Firebase Key | Adjust Key | SGTM Key |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `productId` | String | Evet | Ürün ID bilgisi | `item_id` | *-* | `product_id` |
+| `price` | Double | Evet | Ürün birim fiyatı | `value` | `revenue` | `price` |
+| `quantity` | Int | Evet | Eklenen adet | `quantity` | *-* | `quantity` |
+| `category` | String | Hayır | Ürün kategorisi | `item_category` | *-* | `category` |
