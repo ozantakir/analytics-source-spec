@@ -1,0 +1,54 @@
+name: Generate Analytics Schemas with Gemini AI
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'specs/**'
+      - 'mock_data/**'
+
+jobs:
+  build-and-generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Spec Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install google-genai
+
+      - name: Run AI Schema Generator Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python scripts/generate_schemas.py
+
+      - name: Checkout Schema Repo & Push Changes
+        env:
+          TOKEN: ${{ secrets.AUTO_COMMIT_TOKEN }}
+        run: |
+          # ⚠️ AŞAĞIDAKİ LINKTE 'KULLANICI_ADI' KISMINI KENDİ GITHUB KULLANICI ADINLA DEĞİŞTİR:
+          git clone https://x-access-token:${TOKEN}@github.com/KULLANICI_ADI/analytics-schema-repo.git schema_repo
+          
+          mkdir -p schema_repo/schemas schema_repo/mappings
+          cp -r output/schemas/* schema_repo/schemas/ || true
+          cp -r output/mappings/* schema_repo/mappings/ || true
+          
+          cd schema_repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "auto: generate schemas from spec push"
+            git push
+          else
+            echo "Herhangi bir değişiklik yok, push atılmadı."
+          fi
