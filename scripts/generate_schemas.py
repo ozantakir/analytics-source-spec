@@ -42,7 +42,7 @@ for spec_path in spec_files:
     """
 
     response = client.models.generate_content(
-        model="'gemini-3.6-flash",
+        model='gemini-2.5-flash',
         contents=prompt,
     )
 
