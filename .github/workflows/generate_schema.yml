@@ -34,8 +34,7 @@ jobs:
         env:
           TOKEN: ${{ secrets.AUTO_COMMIT_TOKEN }}
         run: |
-          # ⚠️ AŞAĞIDAKİ LINKTE 'KULLANICI_ADI' KISMINI KENDİ GITHUB KULLANICI ADINLA DEĞİŞTİR:
-          git clone https://x-access-token:${TOKEN}@github.com/KULLANICI_ADI/analytics-schema-repo.git schema_repo
+          git clone https://x-access-token:${TOKEN}@github.com/ozantakir/analytics-schema-repo.git schema_repo
           
           mkdir -p schema_repo/schemas schema_repo/mappings
           cp -r output/schemas/* schema_repo/schemas/ || true
