@@ -8,3 +8,4 @@
 | Parametre İsmi | Tipi | Zorunlu | Açıklama | Firebase Key | Adjust Key | Insider Key |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `productId` | String | Evet | Ürün ID bilgisi | `item_id` | *-* | *-* |
+
